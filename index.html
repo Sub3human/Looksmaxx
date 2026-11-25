@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Face Rater (Auto PSL)</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1f;--mu:#66666b;--ac:#5b4bdb;--bd:#e3e1dc;--ok:#1d9a5b;--mid:#c98710;--lo:#d4493d}
+@media (prefers-color-scheme:dark){:root{--bg:#141417;--card:#1e1e23;--tx:#f0f0f2;--mu:#a0a0a8;--ac:#8c80ff;--bd:#2c2c33}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:14px}
+h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:0 0 6px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
+.mu{color:var(--mu);font-size:.9rem}
+button,.up{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;display:block;text-align:center;position:relative;overflow:hidden}
+.up input{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:0;cursor:pointer}
+button:disabled{opacity:.4}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+canvas{width:100%;border-radius:10px;display:block;background:#000}
+.col h2{text-align:center}
+.m{padding:7px 0;border-top:1px solid var(--bd);font-size:.85rem}.m b{display:flex;justify-content:space-between;gap:6px}
+.big{font-size:3.2rem;font-weight:800;line-height:1}
+.bar{height:8px;border-radius:5px;background:var(--bd);overflow:hidden;margin:4px 0}.bar i{display:block;height:100%}
+.tip{font-size:.92rem;color:var(--mu)}.err{color:var(--lo);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.88rem}td{padding:4px 0;border-top:1px solid var(--bd)}
+</style></head><body><main>
+<h1>Face Rater (Auto)</h1>
+<p class="mu">Add 2 photos. The app finds all face points by itself. Then it rates you on the PSL scale (4 is the average person). The rating is honest, not nice. Photos stay on your device.</p>
+<div class="card two">
+<div><h2>1. Front photo</h2><label class="up">Choose front photo<input id="f1" type="file" accept="image/*"></label><canvas id="p1" hidden></canvas><p class="mu" id="n1">Look at the camera. No smile. Hair off forehead. Good light on your face.</p></div>
+<div><h2>2. Side photo</h2><label class="up">Choose side photo<input id="f2" type="file" accept="image/*"></label><canvas id="p2" hidden></canvas><p class="mu" id="n2">Turn your head to the side. Look straight ahead. Ear must show.</p></div>
+</div>
+<button id="go" style="width:100%" disabled>Scan and rate me</button>
+<p class="mu" id="st"></p>
+<div id="out"></div>
+<p class="mu">This is a strict estimate from shape and skin pixels. It is not the official PSL app. It cannot see hair, eye color, body or smile. Real bone mass cannot be measured from a photo, so the bone score is a guess from face shape. A number does not decide your worth.</p>
+</main>
+<script type="module">
+import {FilesetResolver,FaceLandmarker} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+const $=id=>document.getElementById(id);const IM={};
+let lm=null;
+async function load(){if(lm)return lm;const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+lm=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"},runningMode:"IMAGE",numFaces:1});return lm}
+[['f1','p1','front'],['f2','p2','side']].forEach(([f,p,k])=>{$(f).onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const w=Math.min(1100,i.width),h=i.height*w/i.width,c=$(p);c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);c.hidden=false;IM[k]=c;$('go').disabled=!(IM.front||IM.side)};i.src=r.result};r.readAsDataURL(file);e.target.value=''}});
+const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const sc=(v,i,t)=>Math.round(Math.max(0,100*(1-Math.abs(v-i)/t)));
+const psl=s=>+(1.5+6*Math.pow(s/100,2.2)).toFixed(1);
+const word=p=>p<2.5?'Very weak':p<3.5?'Weak':p<4.5?'Average':p<5.5?'Good':p<6.5?'Very good':'Elite';
+const tier=p=>p<3?'Sub 3':p<4?'Sub 5':p<5?'LTN':p<5.7?'MTN':p<6.4?'HTN':p<7?'HTN+':p<7.5?'Adam':'True Adam';
+const col=s=>s>=70?'var(--ok)':s>=50?'var(--mid)':'var(--lo)';
+function patch(ctx,cx,cy,h){h=Math.max(6,Math.round(h));const x0=Math.max(0,Math.round(cx-h)),y0=Math.max(0,Math.round(cy-h)),w=2*h,im=ctx.getImageData(x0,y0,Math.min(w,ctx.canvas.width-x0),Math.min(w,ctx.canvas.height-y0));const W=im.width,H=im.height,Y=new Float32Array(W*H);
+for(let i=0;i<W*H;i++)Y[i]=.299*im.data[i*4]+.587*im.data[i*4+1]+.114*im.data[i*4+2];
+let tex=0,n=0;for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){const i=y*W+x;tex+=Math.abs(Y[i]-Y[i+1])+Math.abs(Y[i]-Y[i+W]);n+=2}
+const bl=[];for(let y=0;y+4<=H;y+=4)for(let x=0;x+4<=W;x+=4){let s=0;for(let a=0;a<4;a++)for(let b=0;b<4;b++)s+=Y[(y+a)*W+x+b];bl.push(s/16)}
+const m=bl.reduce((s,v)=>s+v,0)/bl.length,sd=Math.sqrt(bl.reduce((s,v)=>s+(v-m)**2,0)/bl.length);return{tex:tex/n,tone:sd}}
+function frontM(L,ctx){const M=[],add=(cat,name,val,score,tip)=>M.push({cat,name,val,score,tip});
+const a=Math.atan2(L[473].y-L[468].y,L[473].x-L[468].x),co=Math.cos(-a),si=Math.sin(-a);
+const R=L.map(p=>({x:p.x*co-p.y*si,y:p.x*si+p.y*co}));const sub=R[2],br=R[9],ch=R[152],lip=mid(R[13],R[14]);
+const bz=d(R[234],R[454]),ew=(d(R[33],R[133])+d(R[263],R[362]))/2,io=d(R[133],R[362]),nw=d(R[129],R[358]),mw=d(R[61],R[291]);
+const mr=(sub.y-br.y)/(ch.y-sub.y);add('Face balance','Middle face vs lower face',mr.toFixed(2)+' : 1',sc(mr,1,.3),'Best is 1 to 1. A short beard or a different haircut can help the look a little. Bone length does not change.');
+const lw=(ch.y-lip.y)/(lip.y-sub.y);add('Face balance','Chin length vs upper lip',lw.toFixed(2)+' : 1',sc(lw,2,.8),'Best is about 2 to 1. A short beard can make a short chin look longer.');
+add('Face balance','Face width vs eye width',(bz/ew).toFixed(2),sc(bz/ew,5,1.1),'Best is about 5. This is bone. Hair style can change how wide the face looks.');
+add('Eyes','Gap between the eyes',(io/ew).toFixed(2),sc(io/ew,1,.35),'Best is 1.0. This is bone. Shaping the eyebrows helps a little.');
+const tl=(Math.atan2(R[133].y-R[33].y,Math.abs(R[33].x-R[133].x))+Math.atan2(R[362].y-R[263].y,Math.abs(R[263].x-R[362].x)))/2*180/Math.PI;
+add('Eyes','Eye tilt (outer corner higher is better)',tl.toFixed(1)+'°',sc(tl,5,6),'Best is 3 to 8°. Sleep 8 hours and reduce puffy eyes to look more alert.');
+add('Nose and mouth','Nose width vs eye gap',(nw/io).toFixed(2),sc(nw/io,1,.35),'Best is close to 1.0. Only surgery changes nose width.');
+add('Nose and mouth','Mouth width vs nose width',(mw/nw).toFixed(2),sc(mw/nw,1.5,.5),'Best is about 1.5. Keep lips healthy with lip balm.');
+const fw=bz/(lip.y-br.y);add('Bone structure','Face width vs height',fw.toFixed(2),sc(fw,1.95,.45),'A higher number looks more masculine. Beard shape and body fat change how it looks.');
+const jr=d(R[58],R[288])/bz;add('Bone structure','Jaw width vs cheekbone width',jr.toFixed(2),sc(jr,.88,.2),'A wide jaw looks strong. Lower body fat shows the jaw more. Bone width does not change.');
+const mx=p=>{const t=(p.y-br.y)/(ch.y-br.y);return br.x+(ch.x-br.x)*t};let tot=0;
+[[468,473],[33,263],[133,362],[61,291],[234,454],[58,288],[129,358]].forEach(([p,q])=>{const A=Math.abs(R[p].x-mx(R[p])),B=Math.abs(R[q].x-mx(R[q]));tot+=Math.abs(A-B)/((A+B)/2)});
+const as=tot/7;add('Symmetry','Left side vs right side',(as*100).toFixed(1)+'% different',sc(as,0,.14),'Everyone has some difference. Under 5% is normal. Sleep on your back and chew on both sides.');
+const h=bz*.07,ps=[patch(ctx,L[151].x,L[151].y,h),patch(ctx,L[205].x,L[205].y,h),patch(ctx,L[425].x,L[425].y,h)];
+const tone=ps.reduce((s,p)=>s+p.tone,0)/3,tex=ps.reduce((s,p)=>s+p.tex,0)/3;
+add('Skin','Skin color evenness',tone.toFixed(1),sc(tone,3,13),'Use sunscreen every day (SPF 30 or more). Use a gentle face wash and a moisturizer. See a skin doctor for dark spots.');
+add('Skin','Skin smoothness',tex.toFixed(1),sc(tex,1.5,6.5),'Wash your face 2 times a day. Ask a skin doctor about retinoid cream for rough skin or acne marks. Drink water and sleep well. Light and camera also change this number.');
+return M}
+function sideM(L){const M=[],add=(cat,name,val,score,tip)=>M.push({cat,name,val,score,tip});
+const nt=L[1],un=L[2],lp=L[0],fh=L[10],ch=L[175],bm=L[152];const right=d(nt,L[58])>d(nt,L[288]);const gn=right?L[58]:L[288],er=right?L[234]:L[454];const dir=nt.x>er.x?1:-1;
+const ang=(o,a,b)=>{const u=[a.x-o.x,a.y-o.y],v=[b.x-o.x,b.y-o.y];return Math.acos((u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)))*180/Math.PI};
+const nl=ang(un,nt,lp);add('Side: nose','Angle between nose and top lip',nl.toFixed(0)+'°',sc(nl,100,24),'Best is about 95 to 105°. Only a nose surgeon can change this.');
+const cv=ang(un,fh,ch);add('Side: profile','Side shape (forehead, nose base, chin)',cv.toFixed(0)+'°',sc(cv,168,11),'Best is about 165 to 172°. A low number means a weak chin or a very flat face.');
+const gg=ang(gn,er,bm);add('Bone structure','Jaw corner angle',gg.toFixed(0)+'°',sc(gg,122,16),'Best is about 115 to 130°. A big angle means a soft, sloping jaw. Low body fat helps the jaw look sharper.');
+const cp=(ch.x-lp.x)*dir/(bm.y-un.y);add('Bone structure','Chin forward vs lip',cp.toFixed(2),sc(cp,-.03,.16),'The chin should be level with the lip or a little behind it. A number far below -0.1 means a weak chin.');
+const ms=Math.atan2(Math.abs(bm.y-gn.y),Math.abs(bm.x-gn.x))*180/Math.PI;add('Bone structure','Jawline slope',ms.toFixed(0)+'°',sc(ms,20,12),'Best is a fairly flat jawline, about 15 to 25°. A steep slope looks short and weak.');
+return M}
+function paint(c,L){const x=c.getContext('2d');x.fillStyle='rgba(255,59,107,.65)';const r=Math.max(1.3,c.width/450);L.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r,0,7);x.fill()})}
+$('go').onclick=async()=>{$('go').disabled=true;$('out').innerHTML='';$('st').textContent='Loading the face scanner (first time takes a little while)...';
+let M={};try{const f=await load();const res={};
+for(const k of ['front','side']){if(!IM[k])continue;$('st').textContent='Scanning '+k+' photo...';const c=IM[k],ctx=c.getContext('2d');const clean=document.createElement('canvas');clean.width=c.width;clean.height=c.height;clean.getContext('2d').drawImage(c,0,0);
+const r=f.detect(c);if(!r.faceLandmarks.length){res[k]={err:true};continue}const L=r.faceLandmarks[0].map(p=>({x:p.x*c.width,y:p.y*c.height}));
+res[k]={c:clean,L,M:k=='front'?frontM(L,clean.getContext('2d')):sideM(L)}}
+show(res)}catch(e){$('st').innerHTML='<span class="err">The scanner could not load. Check your internet and open this file in a normal browser (Chrome or Safari). '+e.message+'</span>'}$('go').disabled=false};
+function show(res){$('st').textContent='';const ok=['front','side'].filter(k=>res[k]&&res[k].M);if(!ok.length){$('out').innerHTML='<p class="err">No face found. Use a clear, bright photo with the whole face showing.</p>';return}
+let all=[];ok.forEach(k=>all=all.concat(res[k].M));const ov=Math.round(all.reduce((s,m)=>s+m.score,0)/all.length),o=psl(ov);
+let h=`<div class="card"><div class="mu">Your PSL rating</div><div class="big" style="color:${col(ov)}">${o}<span class="mu" style="font-size:1rem"> / 8</span></div><h2 style="margin-top:8px">Tier: ${tier(o)}</h2>`;
+if(ok.length<2)h+='<p class="mu">Add both photos for a full rating.</p>';
+h+=`<table><tr><td><b>Sub 3</b></td><td>Very bad</td></tr><tr><td><b>Sub 5</b></td><td>Below average</td></tr><tr><td><b>LTN</b></td><td>Average</td></tr><tr><td><b>MTN</b></td><td>A little above average</td></tr><tr><td><b>HTN</b></td><td>Good looking</td></tr><tr><td><b>HTN+</b></td><td>Elite</td></tr><tr><td><b>Adam</b></td><td>Top 1%</td></tr><tr><td><b>True Adam</b></td><td>Top 0.001%</td></tr></table></div><div class="card two">`;
+['front','side'].forEach(k=>{h+=`<div class="col"><h2>${k=='front'?'Front':'Side'}</h2>`;const r=res[k];if(!r){h+='<p class="mu">No photo added.</p></div>';return}if(r.err){h+='<p class="err">No face found in this photo. Try a clearer one.</p></div>';return}
+const s=Math.round(r.M.reduce((a,m)=>a+m.score,0)/r.M.length);h+=`<div id="cv_${k}"></div><div class="m"><b><span>View score</span><span style="color:${col(s)}">${psl(s)} · ${tier(psl(s))}</span></b><div class="bar"><i style="width:${psl(s)/8*100}%;background:${col(s)}"></i></div></div>`;
+r.M.forEach(m=>{const p=psl(m.score);h+=`<div class="m"><b><span>${m.name}</span><span style="color:${col(m.score)}">${p}</span></b><span class="mu">${m.val} · ${word(p)}</span></div>`});h+='</div>'});
+h+='</div>';
+const cats={};all.forEach(m=>(cats[m.cat]=cats[m.cat]||[]).push(m));
+h+='<div class="card"><h2>Scores by part</h2>';for(const k in cats){const s=Math.round(cats[k].reduce((a,m)=>a+m.score,0)/cats[k].length);h+=`<div class="m"><b><span>${k}</span><span style="color:${col(s)}">${psl(s)} · ${word(psl(s))}</span></b><div class="bar"><i style="width:${psl(s)/8*100}%;background:${col(s)}"></i></div></div>`}h+='</div>';
+const weak=[...all].filter(m=>m.score<70).sort((a,b)=>a.score-b.score);
+h+='<div class="card"><h2>How to improve</h2>'+(weak.length?weak.map(m=>`<div class="m"><b>${m.name}</b><div class="tip">${m.tip}</div></div>`).join(''):'<p class="tip">No weak area found. Keep up your routine.</p>')+`</div>
+<div class="card"><h2>Your daily plan</h2><p class="tip"><b>Skin:</b> sunscreen every morning, gentle wash, moisturizer, and see a skin doctor for acne.<br><b>Face fat:</b> lower body fat shows the jaw and cheeks more.<br><b>Hair:</b> pick a cut that fits your face. Keep eyebrows tidy.<br><b>Beard:</b> shape it to balance the chin and jaw, or shave clean.<br><b>Body:</b> sleep 8 hours, stand tall, lift weights, eat well.<br><b>Bone:</b> bone shape does not change without surgery. If you want that, talk only to a licensed doctor.</p></div>`;
+$('out').innerHTML=h;ok.forEach(k=>{const c=document.createElement('canvas');c.width=res[k].c.width;c.height=res[k].c.height;c.getContext('2d').drawImage(res[k].c,0,0);paint(c,res[k].L);$('cv_'+k).appendChild(c)});$('out').scrollIntoView({behavior:'smooth'})}
+</script></body></html>
