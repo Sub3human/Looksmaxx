@@ -1,0 +1,5 @@
+const C='psl-plus-v1',V='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/';
+const EXT=[V+'vision_bundle.mjs',V+'wasm/vision_wasm_internal.js',V+'wasm/vision_wasm_internal.wasm',V+'wasm/vision_wasm_nosimd_internal.js',V+'wasm/vision_wasm_nosimd_internal.wasm','https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'];
+self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(C);await c.addAll(['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png']);await Promise.allSettled(EXT.map(u=>c.add(new Request(u,{mode:'cors'}))))})());self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==C).map(n=>caches.delete(n)))));self.clients.claim()});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(res&&res.ok){const cp=res.clone();caches.open(C).then(c=>c.put(e.request,cp))}return res}).catch(()=>caches.match('index.html'))))});

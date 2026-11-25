@@ -1,107 +1,183 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Face Rater (Auto PSL)</title>
+<title>PSL+</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0c0b10"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <style>
-:root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1f;--mu:#66666b;--ac:#5b4bdb;--bd:#e3e1dc;--ok:#1d9a5b;--mid:#c98710;--lo:#d4493d}
-@media (prefers-color-scheme:dark){:root{--bg:#141417;--card:#1e1e23;--tx:#f0f0f2;--mu:#a0a0a8;--ac:#8c80ff;--bd:#2c2c33}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:760px;margin:0 auto;padding:14px}
-h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.1rem;margin:0 0 6px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
-.mu{color:var(--mu);font-size:.9rem}
-button,.up{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:600;cursor:pointer;display:block;text-align:center;position:relative;overflow:hidden}
-.up input{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:0;cursor:pointer}
-button:disabled{opacity:.4}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-canvas{width:100%;border-radius:10px;display:block;background:#000}
-.col h2{text-align:center}
-.m{padding:7px 0;border-top:1px solid var(--bd);font-size:.85rem}.m b{display:flex;justify-content:space-between;gap:6px}
-.big{font-size:3.2rem;font-weight:800;line-height:1}
-.bar{height:8px;border-radius:5px;background:var(--bd);overflow:hidden;margin:4px 0}.bar i{display:block;height:100%}
-.tip{font-size:.92rem;color:var(--mu)}.err{color:var(--lo);font-weight:600}
-table{width:100%;border-collapse:collapse;font-size:.88rem}td{padding:4px 0;border-top:1px solid var(--bd)}
+:root{--bg:#0c0b10;--cd:rgba(255,255,255,.055);--bd:rgba(255,255,255,.1);--tx:#f3f0ea;--mu:#9d9aa5;--gd:#d9c29a;--ok:#5fb98a;--lo:#d4605a;--md:#d9a84a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;color:var(--tx);font:16px/1.5 -apple-system,"Inter","Segoe UI",Roboto,sans-serif;background:radial-gradient(120% 55% at 100% 0%,rgba(130,45,32,.35),transparent 70%),radial-gradient(90% 50% at 0% 18%,rgba(45,35,110,.32),transparent 70%),var(--bg);background-attachment:fixed;min-height:100vh;padding-top:env(safe-area-inset-top,0)}
+main{max-width:560px;margin:0 auto;padding:16px 16px 110px}
+.sf{font-family:"Iowan Old Style",Georgia,"Times New Roman",serif}
+header{display:flex;justify-content:space-between;align-items:end;margin-bottom:14px}
+.dt{font-size:.72rem;letter-spacing:.18em;color:var(--mu)}h1{margin:0;font-size:2rem;font-weight:500}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:24px;padding:16px;margin:12px 0}
+h2{font-size:1.15rem;margin:0 0 8px;font-weight:600}h3{font-size:.95rem;margin:14px 0 4px;color:var(--gd)}
+.mu{color:var(--mu);font-size:.88rem}p{margin:6px 0}
+button.pri{width:100%;background:var(--gd);color:#1a150c;border:0;border-radius:16px;padding:15px;font:inherit;font-weight:700;font-size:1rem}
+button.pri:disabled{opacity:.35}
+button.gh{background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;font:inherit}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{position:relative;aspect-ratio:3/4;border-radius:20px;border:1.5px dashed var(--bd);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mu);overflow:hidden;cursor:pointer}
+.tile input{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:0}
+.tile canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}.tile b{display:block;color:var(--tx);font-size:1.05rem}
+.ov{display:flex;align-items:center;gap:14px}.ring{position:relative;width:104px;height:104px;flex:none}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.lbl{font-size:.7rem;letter-spacing:.2em;color:var(--mu)}.tr{font-size:1.9rem;line-height:1.1}
+.sc{margin-left:auto;text-align:center;border-left:1px solid var(--bd);padding-left:14px}.sc div:first-child{font-size:1.5rem}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs button{flex:1;padding:12px;border-radius:16px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);font:inherit;font-weight:600}.tabs button.on{background:#f3f0ea;color:#14120f}
+.photo canvas{width:100%;border-radius:22px;display:block}
+.met{border-top:1px solid var(--bd)}.met:first-of-type{border-top:0}
+summary{list-style:none;cursor:pointer;display:flex;gap:8px;align-items:center;padding:12px 0}summary::-webkit-details-marker{display:none}
+.mn{flex:1;font-weight:600}.mv{color:var(--mu);font-size:.8rem}.ms{min-width:34px;text-align:right;font-weight:700}
+.sl{height:8px;border-radius:5px;background:linear-gradient(90deg,var(--lo),var(--md),var(--ok),var(--md),var(--lo));position:relative;margin:2px 0 10px}
+.sl i{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;background:#fff;transform:translateX(-50%);box-shadow:0 1px 4px #000a}
+.det{padding-bottom:12px}.det h4{margin:10px 0 2px;font-size:.78rem;letter-spacing:.12em;color:var(--gd);text-transform:uppercase}.det p{font-size:.92rem;color:#d4d1cc;margin:2px 0}
+.fx{display:inline-block;margin-top:8px;font-size:.78rem;padding:3px 10px;border-radius:20px;border:1px solid var(--bd)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0));background:rgba(12,11,16,.9);backdrop-filter:blur(14px);border-top:1px solid var(--bd)}
+nav button{flex:1;max-width:130px;background:none;border:0;color:var(--mu);font:inherit;font-size:.74rem;padding:6px 2px;border-radius:12px}nav button b{display:block;font-size:1.25rem}nav button.on{color:var(--gd)}
+.chk{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}.chk input{width:22px;height:22px;accent-color:#d9c29a}
+.bar{height:8px;border-radius:5px;background:var(--bd);overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--gd)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}td{padding:5px 0;border-top:1px solid var(--bd)}
+ul{padding-left:18px;margin:4px 0}li{margin:4px 0;font-size:.92rem;color:#d4d1cc}
+.err{color:var(--lo);font-weight:600}.bad{border-color:rgba(212,96,90,.4)}
+.rk{display:flex;gap:6px;margin:8px 0}.rk span{flex:1;text-align:center;font-size:.68rem;padding:6px 0;border-radius:10px;border:1px solid var(--bd);color:var(--mu)}.rk span.on{background:var(--gd);color:#1a150c;font-weight:700}
 </style></head><body><main>
-<h1>Face Rater (Auto)</h1>
-<p class="mu">Add 2 photos. The app finds all face points by itself. Then it rates you on the PSL scale (4 is the average person). The rating is honest, not nice. Photos stay on your device.</p>
-<div class="card two">
-<div><h2>1. Front photo</h2><label class="up">Choose front photo<input id="f1" type="file" accept="image/*"></label><canvas id="p1" hidden></canvas><p class="mu" id="n1">Look at the camera. No smile. Hair off forehead. Good light on your face.</p></div>
-<div><h2>2. Side photo</h2><label class="up">Choose side photo<input id="f2" type="file" accept="image/*"></label><canvas id="p2" hidden></canvas><p class="mu" id="n2">Turn your head to the side. Look straight ahead. Ear must show.</p></div>
-</div>
-<button id="go" style="width:100%" disabled>Scan and rate me</button>
-<p class="mu" id="st"></p>
-<div id="out"></div>
-<p class="mu">This is a strict estimate from shape and skin pixels. It is not the official PSL app. It cannot see hair, eye color, body or smile. Real bone mass cannot be measured from a photo, so the bone score is a guess from face shape. A number does not decide your worth.</p>
+<header><div><div class="dt" id="dt"></div><h1 class="sf" id="ttl">PSL+</h1></div><button class="gh" id="inst" hidden>Install</button></header>
+
+<section id="v-scan">
+<div class="card"><h2>New scan</h2><p class="mu">Add a front photo and a side photo. The scan runs on your phone. Photos are never uploaded or saved.</p>
+<div class="tiles"><label class="tile" id="t1"><div><b>+ Front</b>Look at camera, no smile, hair off forehead</div><canvas></canvas><input id="f1" type="file" accept="image/*"></label>
+<label class="tile" id="t2"><div><b>+ Side</b>Full side view, head level, ear visible</div><canvas></canvas><input id="f2" type="file" accept="image/*"></label></div>
+<p class="mu">Use bright, even light and hold the phone at eye level. Bad light and wrong angles make bad numbers.</p>
+<button class="pri" id="go" disabled>Scan my face</button><p class="mu" id="st"></p></div>
+<div id="res"></div></section>
+
+<section id="v-prog" hidden></section>
+<section id="v-plan" hidden></section>
+<section id="v-priv" hidden></section>
 </main>
+<nav id="nav"><button data-v="scan" class="on"><b>◎</b>Analyze</button><button data-v="prog"><b>↗</b>Progress</button><button data-v="plan"><b>✦</b>Plan</button><button data-v="priv"><b>🔒</b>Privacy</button></nav>
+
+<script>
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+let dp=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('inst').hidden=false});
+document.addEventListener('click',e=>{if(e.target.id==='inst'&&dp){dp.prompt();dp=null;e.target.hidden=true}});
+</script>
 <script type="module">
 import {FilesetResolver,FaceLandmarker} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
-const $=id=>document.getElementById(id);const IM={};
-let lm=null;
-async function load(){if(lm)return lm;const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-lm=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"},runningMode:"IMAGE",numFaces:1});return lm}
-[['f1','p1','front'],['f2','p2','side']].forEach(([f,p,k])=>{$(f).onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const w=Math.min(1100,i.width),h=i.height*w/i.width,c=$(p);c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);c.hidden=false;IM[k]=c;$('go').disabled=!(IM.front||IM.side)};i.src=r.result};r.readAsDataURL(file);e.target.value=''}});
+const $=id=>document.getElementById(id);
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+$('dt').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+const IM={};let lm=null,RES=null,TAB='front';
+async function load(){if(lm)return lm;const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");lm=await FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"},runningMode:"IMAGE",numFaces:1});return lm}
+// photo pickers
+[['f1','t1','front'],['f2','t2','side']].forEach(([f,t,k])=>{$(f).onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const w=Math.min(1100,i.width),c=document.createElement('canvas');c.width=w;c.height=i.height*w/i.width;c.getContext('2d').drawImage(i,0,0,c.width,c.height);IM[k]=c;const tc=$(t).querySelector('canvas');tc.width=c.width;tc.height=c.height;tc.getContext('2d').drawImage(c,0,0);tc.style.display='block';$(t).querySelector('div').style.display='none';$('go').disabled=!(IM.front||IM.side)};i.src=r.result};r.readAsDataURL(file);e.target.value=''}});
+// nav
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));['scan','prog','plan','priv'].forEach(v=>$('v-'+v).hidden=v!=b.dataset.v);if(b.dataset.v=='prog')renderProg();$('ttl').textContent={scan:'PSL+',prog:'Progress',plan:'Your plan',priv:'Privacy'}[b.dataset.v];scrollTo(0,0)});
+// math
 const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
 const sc=(v,i,t)=>Math.round(Math.max(0,100*(1-Math.abs(v-i)/t)));
 const psl=s=>+(1.5+6*Math.pow(s/100,2.2)).toFixed(1);
-const word=p=>p<2.5?'Very weak':p<3.5?'Weak':p<4.5?'Average':p<5.5?'Good':p<6.5?'Very good':'Elite';
 const tier=p=>p<3?'Sub 3':p<4?'Sub 5':p<5?'LTN':p<5.7?'MTN':p<6.4?'HTN':p<7?'HTN+':p<7.5?'Adam':'True Adam';
-const col=s=>s>=70?'var(--ok)':s>=50?'var(--mid)':'var(--lo)';
+const avg=a=>a.length?Math.round(a.reduce((s,m)=>s+m.score,0)/a.length):null;
+// what each measurement means and how to improve it. s = how much can change without surgery (0 to 1)
+const INFO={
+mid:{s:.1,w:'Middle face (brows to nose) compared with lower face (nose to chin). Equal length looks balanced. A longer middle face reads as a long, less compact face.',so:'Hair with a fringe or top volume shortens the look. A short beard or fuller chin line balances it. Lower face fat helps a little.',ha:'Bone length only changes with jaw surgery (Le Fort, bimax) or chin surgery. Rare and serious.'},
+chinlip:{s:.2,w:'Chin length compared with the upper lip. About 2 to 1 looks balanced. A short chin makes the face look weak.',so:'Keep a beard longer under the chin. Lower body fat to show the chin line. Fix posture (head forward hides the chin).',ha:'Genioplasty (chin surgery), chin implant, or chin filler for a short chin.'},
+fifths:{s:.1,w:'Face width compared with the width of one eye. About 5 eye widths wide is the classic balance.',so:'Haircut volume at the sides changes how wide you look. Lower face fat shows your real width.',ha:'Face width is bone. Only cheek or jaw implants and bone surgery change it.'},
+eyegap:{s:.05,w:'The gap between the inner eye corners compared with one eye width. Close to 1.0 looks balanced.',so:'Shape the inner ends of the eyebrows. Keep the space between the brows clean. Nothing else changes it.',ha:'Bone spacing cannot be changed in any normal way.'},
+tilt:{s:.2,w:'How much the outer eye corner sits higher than the inner corner. A slight upward tilt looks alert and attractive.',so:'Sleep 8 hours, cut salt, lower body fat and avoid eye rubbing to reduce puffy or droopy eyes. Trim brows so they lift the eye.',ha:'Canthopexy or canthoplasty (surgery on the outer eye corner) by an eye plastic surgeon.'},
+nosew:{s:.1,w:'Width of the nose compared with the gap between the eyes. Close to 1.0 looks balanced.',so:'Almost nothing. Lower body fat slims the nose a little.',ha:'Rhinoplasty with alar base reduction.'},
+mouthw:{s:.15,w:'Mouth width compared with nose width. About 1.5 looks balanced.',so:'Lip care, teeth whitening, and a relaxed natural smile. Good teeth change how the mouth looks a lot.',ha:'Lip filler or lip surgery. Braces or aligners (orthodontics) change lip support.'},
+fwhr:{s:.25,w:'Width of the face compared with height from brows to lips (fWHR). Higher looks more masculine and dominant.',so:'Lower body fat, a beard shaped to widen the jaw, neck and trap training, and a haircut that adds width on top.',ha:'Cheek (zygoma) implants or bone surgery. Rare.'},
+jaw:{s:.35,w:'Jaw width compared with cheekbone width. A wide jaw looks strong and masculine.',so:'Cut body fat, because fat hides the jaw. Shape a beard to square the jaw. Train your neck. Heavy chewing has weak evidence.',ha:'Jaw implants, jaw filler, or orthognathic (jaw) surgery.'},
+sym:{s:.3,w:'How equal your left and right sides are. Every face has some difference. Under about 5% is normal.',so:'Sleep on your back, chew on both sides, fix posture, part your hair on the better side, groom both brows evenly.',ha:'Bone asymmetry needs jaw surgery. Soft asymmetry can use filler. Both need a specialist.'},
+skinTone:{s:.7,w:'How even your skin colour looks (dark spots, redness, uneven tone). Measured from your forehead and cheeks.',so:'SPF 30+ every morning, vitamin C in the morning, niacinamide, azelaic acid for marks, and no picking spots.',ha:'Lasers and chemical peels by a dermatologist.'},
+skinSmooth:{s:.7,w:'How smooth the texture looks (pores, acne marks, roughness). Light and camera sharpness change this number.',so:'Gentle cleanser, moisturizer, and a retinoid at night (start slowly). Sleep and water. Acne needs a dermatologist (prescription options exist).',ha:'Microneedling, lasers and scar treatment by a professional.'},
+nl:{s:0,w:'Angle between the underside of the nose and the top lip. About 95 to 105 degrees looks balanced.',so:'Almost nothing changes this naturally.',ha:'Rhinoplasty (tip rotation).'},
+profile:{s:.1,w:'How straight the forehead, nose base and chin line up in profile. A low number means a recessed chin or a flat face.',so:'Fix head-forward posture. Lower face fat. A beard can fake chin projection.',ha:'Chin surgery, chin implant, or jaw surgery (bimax).'},
+eline:{s:.1,w:'How far the lips sit behind or in front of the line from nose tip to chin (E-line). Slightly behind is balanced.',so:'Orthodontics if front teeth push the lips out. Lower face fat.',ha:'Orthognathic surgery, rhinoplasty or chin surgery.'},
+jawang:{s:.3,w:'The corner angle of the jaw. Roughly 115 to 130 degrees looks sharp. A bigger angle looks soft and sloped.',so:'Lower body fat so the jaw corner shows. Train your neck and posture.',ha:'Jaw angle implants or orthognathic surgery.'},
+chinfwd:{s:.15,w:'How far the chin sits forward compared with the lip. Level or slightly behind the lip is balanced.',so:'Posture, lower body fat, and a beard to add chin look.',ha:'Genioplasty or chin implant. Bimax for a big recession.'},
+jawslope:{s:.15,w:'How steep the jawline is from the jaw corner to the chin. A flatter jawline looks strong.',so:'Lower body fat and posture help a bit.',ha:'Orthognathic surgery changes the jaw slope.'}};
+// finding measurements
 function patch(ctx,cx,cy,h){h=Math.max(6,Math.round(h));const x0=Math.max(0,Math.round(cx-h)),y0=Math.max(0,Math.round(cy-h)),w=2*h,im=ctx.getImageData(x0,y0,Math.min(w,ctx.canvas.width-x0),Math.min(w,ctx.canvas.height-y0));const W=im.width,H=im.height,Y=new Float32Array(W*H);
-for(let i=0;i<W*H;i++)Y[i]=.299*im.data[i*4]+.587*im.data[i*4+1]+.114*im.data[i*4+2];
-let tex=0,n=0;for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){const i=y*W+x;tex+=Math.abs(Y[i]-Y[i+1])+Math.abs(Y[i]-Y[i+W]);n+=2}
+for(let i=0;i<W*H;i++)Y[i]=.299*im.data[i*4]+.587*im.data[i*4+1]+.114*im.data[i*4+2];let tex=0,n=0;for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){const i=y*W+x;tex+=Math.abs(Y[i]-Y[i+1])+Math.abs(Y[i]-Y[i+W]);n+=2}
 const bl=[];for(let y=0;y+4<=H;y+=4)for(let x=0;x+4<=W;x+=4){let s=0;for(let a=0;a<4;a++)for(let b=0;b<4;b++)s+=Y[(y+a)*W+x+b];bl.push(s/16)}
-const m=bl.reduce((s,v)=>s+v,0)/bl.length,sd=Math.sqrt(bl.reduce((s,v)=>s+(v-m)**2,0)/bl.length);return{tex:tex/n,tone:sd}}
-function frontM(L,ctx){const M=[],add=(cat,name,val,score,tip)=>M.push({cat,name,val,score,tip});
-const a=Math.atan2(L[473].y-L[468].y,L[473].x-L[468].x),co=Math.cos(-a),si=Math.sin(-a);
-const R=L.map(p=>({x:p.x*co-p.y*si,y:p.x*si+p.y*co}));const sub=R[2],br=R[9],ch=R[152],lip=mid(R[13],R[14]);
-const bz=d(R[234],R[454]),ew=(d(R[33],R[133])+d(R[263],R[362]))/2,io=d(R[133],R[362]),nw=d(R[129],R[358]),mw=d(R[61],R[291]);
-const mr=(sub.y-br.y)/(ch.y-sub.y);add('Face balance','Middle face vs lower face',mr.toFixed(2)+' : 1',sc(mr,1,.3),'Best is 1 to 1. A short beard or a different haircut can help the look a little. Bone length does not change.');
-const lw=(ch.y-lip.y)/(lip.y-sub.y);add('Face balance','Chin length vs upper lip',lw.toFixed(2)+' : 1',sc(lw,2,.8),'Best is about 2 to 1. A short beard can make a short chin look longer.');
-add('Face balance','Face width vs eye width',(bz/ew).toFixed(2),sc(bz/ew,5,1.1),'Best is about 5. This is bone. Hair style can change how wide the face looks.');
-add('Eyes','Gap between the eyes',(io/ew).toFixed(2),sc(io/ew,1,.35),'Best is 1.0. This is bone. Shaping the eyebrows helps a little.');
-const tl=(Math.atan2(R[133].y-R[33].y,Math.abs(R[33].x-R[133].x))+Math.atan2(R[362].y-R[263].y,Math.abs(R[263].x-R[362].x)))/2*180/Math.PI;
-add('Eyes','Eye tilt (outer corner higher is better)',tl.toFixed(1)+'°',sc(tl,5,6),'Best is 3 to 8°. Sleep 8 hours and reduce puffy eyes to look more alert.');
-add('Nose and mouth','Nose width vs eye gap',(nw/io).toFixed(2),sc(nw/io,1,.35),'Best is close to 1.0. Only surgery changes nose width.');
-add('Nose and mouth','Mouth width vs nose width',(mw/nw).toFixed(2),sc(mw/nw,1.5,.5),'Best is about 1.5. Keep lips healthy with lip balm.');
-const fw=bz/(lip.y-br.y);add('Bone structure','Face width vs height',fw.toFixed(2),sc(fw,1.95,.45),'A higher number looks more masculine. Beard shape and body fat change how it looks.');
-const jr=d(R[58],R[288])/bz;add('Bone structure','Jaw width vs cheekbone width',jr.toFixed(2),sc(jr,.88,.2),'A wide jaw looks strong. Lower body fat shows the jaw more. Bone width does not change.');
+const m=bl.reduce((s,v)=>s+v,0)/bl.length;return{tex:tex/n,tone:Math.sqrt(bl.reduce((s,v)=>s+(v-m)**2,0)/bl.length)}}
+function frontM(L,ctx){const M=[],add=(g,id,name,val,score)=>M.push({g,id,name,val,score});
+const a=Math.atan2(L[473].y-L[468].y,L[473].x-L[468].x),co=Math.cos(-a),si=Math.sin(-a),R=L.map(p=>({x:p.x*co-p.y*si,y:p.x*si+p.y*co}));
+const sub=R[2],br=R[9],ch=R[152],lip=mid(R[13],R[14]),bz=d(R[234],R[454]),ew=(d(R[33],R[133])+d(R[263],R[362]))/2,io=d(R[133],R[362]),nw=d(R[129],R[358]),mw=d(R[61],R[291]);
+let v=(sub.y-br.y)/(ch.y-sub.y);add('Face ratio','mid','Middle vs lower face',v.toFixed(2)+' : 1',sc(v,1,.3));
+v=(ch.y-lip.y)/(lip.y-sub.y);add('Face ratio','chinlip','Chin vs upper lip',v.toFixed(2)+' : 1',sc(v,2,.8));
+add('Face ratio','fifths','Face width vs eye width',(bz/ew).toFixed(2),sc(bz/ew,5,1.1));
+add('Eyes','eyegap','Gap between the eyes',(io/ew).toFixed(2),sc(io/ew,1,.35));
+const tl=(Math.atan2(R[133].y-R[33].y,Math.abs(R[33].x-R[133].x))+Math.atan2(R[362].y-R[263].y,Math.abs(R[263].x-R[362].x)))/2*180/Math.PI;add('Eyes','tilt','Eye tilt',tl.toFixed(1)+'°',sc(tl,5,6));
+add('Nose and mouth','nosew','Nose width vs eye gap',(nw/io).toFixed(2),sc(nw/io,1,.35));add('Nose and mouth','mouthw','Mouth width vs nose width',(mw/nw).toFixed(2),sc(mw/nw,1.5,.5));
+const fw=bz/(lip.y-br.y);add('Dimorphism','fwhr','Face width vs height (fWHR)',fw.toFixed(2),sc(fw,1.95,.45));
+const jr=d(R[58],R[288])/bz;add('Dimorphism','jaw','Jaw width vs cheekbone width',jr.toFixed(2),sc(jr,.88,.2));
 const mx=p=>{const t=(p.y-br.y)/(ch.y-br.y);return br.x+(ch.x-br.x)*t};let tot=0;
 [[468,473],[33,263],[133,362],[61,291],[234,454],[58,288],[129,358]].forEach(([p,q])=>{const A=Math.abs(R[p].x-mx(R[p])),B=Math.abs(R[q].x-mx(R[q]));tot+=Math.abs(A-B)/((A+B)/2)});
-const as=tot/7;add('Symmetry','Left side vs right side',(as*100).toFixed(1)+'% different',sc(as,0,.14),'Everyone has some difference. Under 5% is normal. Sleep on your back and chew on both sides.');
-const h=bz*.07,ps=[patch(ctx,L[151].x,L[151].y,h),patch(ctx,L[205].x,L[205].y,h),patch(ctx,L[425].x,L[425].y,h)];
-const tone=ps.reduce((s,p)=>s+p.tone,0)/3,tex=ps.reduce((s,p)=>s+p.tex,0)/3;
-add('Skin','Skin color evenness',tone.toFixed(1),sc(tone,3,13),'Use sunscreen every day (SPF 30 or more). Use a gentle face wash and a moisturizer. See a skin doctor for dark spots.');
-add('Skin','Skin smoothness',tex.toFixed(1),sc(tex,1.5,6.5),'Wash your face 2 times a day. Ask a skin doctor about retinoid cream for rough skin or acne marks. Drink water and sleep well. Light and camera also change this number.');
-return M}
-function sideM(L){const M=[],add=(cat,name,val,score,tip)=>M.push({cat,name,val,score,tip});
-const nt=L[1],un=L[2],lp=L[0],fh=L[10],ch=L[175],bm=L[152];const right=d(nt,L[58])>d(nt,L[288]);const gn=right?L[58]:L[288],er=right?L[234]:L[454];const dir=nt.x>er.x?1:-1;
-const ang=(o,a,b)=>{const u=[a.x-o.x,a.y-o.y],v=[b.x-o.x,b.y-o.y];return Math.acos((u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)))*180/Math.PI};
-const nl=ang(un,nt,lp);add('Side: nose','Angle between nose and top lip',nl.toFixed(0)+'°',sc(nl,100,24),'Best is about 95 to 105°. Only a nose surgeon can change this.');
-const cv=ang(un,fh,ch);add('Side: profile','Side shape (forehead, nose base, chin)',cv.toFixed(0)+'°',sc(cv,168,11),'Best is about 165 to 172°. A low number means a weak chin or a very flat face.');
-const gg=ang(gn,er,bm);add('Bone structure','Jaw corner angle',gg.toFixed(0)+'°',sc(gg,122,16),'Best is about 115 to 130°. A big angle means a soft, sloping jaw. Low body fat helps the jaw look sharper.');
-const cp=(ch.x-lp.x)*dir/(bm.y-un.y);add('Bone structure','Chin forward vs lip',cp.toFixed(2),sc(cp,-.03,.16),'The chin should be level with the lip or a little behind it. A number far below -0.1 means a weak chin.');
-const ms=Math.atan2(Math.abs(bm.y-gn.y),Math.abs(bm.x-gn.x))*180/Math.PI;add('Bone structure','Jawline slope',ms.toFixed(0)+'°',sc(ms,20,12),'Best is a fairly flat jawline, about 15 to 25°. A steep slope looks short and weak.');
-return M}
-function paint(c,L){const x=c.getContext('2d');x.fillStyle='rgba(255,59,107,.65)';const r=Math.max(1.3,c.width/450);L.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r,0,7);x.fill()})}
-$('go').onclick=async()=>{$('go').disabled=true;$('out').innerHTML='';$('st').textContent='Loading the face scanner (first time takes a little while)...';
-let M={};try{const f=await load();const res={};
-for(const k of ['front','side']){if(!IM[k])continue;$('st').textContent='Scanning '+k+' photo...';const c=IM[k],ctx=c.getContext('2d');const clean=document.createElement('canvas');clean.width=c.width;clean.height=c.height;clean.getContext('2d').drawImage(c,0,0);
-const r=f.detect(c);if(!r.faceLandmarks.length){res[k]={err:true};continue}const L=r.faceLandmarks[0].map(p=>({x:p.x*c.width,y:p.y*c.height}));
-res[k]={c:clean,L,M:k=='front'?frontM(L,clean.getContext('2d')):sideM(L)}}
-show(res)}catch(e){$('st').innerHTML='<span class="err">The scanner could not load. Check your internet and open this file in a normal browser (Chrome or Safari). '+e.message+'</span>'}$('go').disabled=false};
-function show(res){$('st').textContent='';const ok=['front','side'].filter(k=>res[k]&&res[k].M);if(!ok.length){$('out').innerHTML='<p class="err">No face found. Use a clear, bright photo with the whole face showing.</p>';return}
-let all=[];ok.forEach(k=>all=all.concat(res[k].M));const ov=Math.round(all.reduce((s,m)=>s+m.score,0)/all.length),o=psl(ov);
-let h=`<div class="card"><div class="mu">Your PSL rating</div><div class="big" style="color:${col(ov)}">${o}<span class="mu" style="font-size:1rem"> / 8</span></div><h2 style="margin-top:8px">Tier: ${tier(o)}</h2>`;
-if(ok.length<2)h+='<p class="mu">Add both photos for a full rating.</p>';
-h+=`<table><tr><td><b>Sub 3</b></td><td>Very bad</td></tr><tr><td><b>Sub 5</b></td><td>Below average</td></tr><tr><td><b>LTN</b></td><td>Average</td></tr><tr><td><b>MTN</b></td><td>A little above average</td></tr><tr><td><b>HTN</b></td><td>Good looking</td></tr><tr><td><b>HTN+</b></td><td>Elite</td></tr><tr><td><b>Adam</b></td><td>Top 1%</td></tr><tr><td><b>True Adam</b></td><td>Top 0.001%</td></tr></table></div><div class="card two">`;
-['front','side'].forEach(k=>{h+=`<div class="col"><h2>${k=='front'?'Front':'Side'}</h2>`;const r=res[k];if(!r){h+='<p class="mu">No photo added.</p></div>';return}if(r.err){h+='<p class="err">No face found in this photo. Try a clearer one.</p></div>';return}
-const s=Math.round(r.M.reduce((a,m)=>a+m.score,0)/r.M.length);h+=`<div id="cv_${k}"></div><div class="m"><b><span>View score</span><span style="color:${col(s)}">${psl(s)} · ${tier(psl(s))}</span></b><div class="bar"><i style="width:${psl(s)/8*100}%;background:${col(s)}"></i></div></div>`;
-r.M.forEach(m=>{const p=psl(m.score);h+=`<div class="m"><b><span>${m.name}</span><span style="color:${col(m.score)}">${p}</span></b><span class="mu">${m.val} · ${word(p)}</span></div>`});h+='</div>'});
-h+='</div>';
-const cats={};all.forEach(m=>(cats[m.cat]=cats[m.cat]||[]).push(m));
-h+='<div class="card"><h2>Scores by part</h2>';for(const k in cats){const s=Math.round(cats[k].reduce((a,m)=>a+m.score,0)/cats[k].length);h+=`<div class="m"><b><span>${k}</span><span style="color:${col(s)}">${psl(s)} · ${word(psl(s))}</span></b><div class="bar"><i style="width:${psl(s)/8*100}%;background:${col(s)}"></i></div></div>`}h+='</div>';
-const weak=[...all].filter(m=>m.score<70).sort((a,b)=>a.score-b.score);
-h+='<div class="card"><h2>How to improve</h2>'+(weak.length?weak.map(m=>`<div class="m"><b>${m.name}</b><div class="tip">${m.tip}</div></div>`).join(''):'<p class="tip">No weak area found. Keep up your routine.</p>')+`</div>
-<div class="card"><h2>Your daily plan</h2><p class="tip"><b>Skin:</b> sunscreen every morning, gentle wash, moisturizer, and see a skin doctor for acne.<br><b>Face fat:</b> lower body fat shows the jaw and cheeks more.<br><b>Hair:</b> pick a cut that fits your face. Keep eyebrows tidy.<br><b>Beard:</b> shape it to balance the chin and jaw, or shave clean.<br><b>Body:</b> sleep 8 hours, stand tall, lift weights, eat well.<br><b>Bone:</b> bone shape does not change without surgery. If you want that, talk only to a licensed doctor.</p></div>`;
-$('out').innerHTML=h;ok.forEach(k=>{const c=document.createElement('canvas');c.width=res[k].c.width;c.height=res[k].c.height;c.getContext('2d').drawImage(res[k].c,0,0);paint(c,res[k].L);$('cv_'+k).appendChild(c)});$('out').scrollIntoView({behavior:'smooth'})}
+add('Symmetry','sym','Left side vs right side',(tot/7*100).toFixed(1)+'% different',sc(tot/7,0,.14));
+const h=bz*.07,ps=[151,205,425].map(i=>patch(ctx,L[i].x,L[i].y,h)),tone=ps.reduce((s,p)=>s+p.tone,0)/3,tex=ps.reduce((s,p)=>s+p.tex,0)/3;
+add('Skin signals','skinTone','Skin colour evenness',tone.toFixed(1),sc(tone,3,13));add('Skin signals','skinSmooth','Skin smoothness',tex.toFixed(1),sc(tex,1.5,6.5));return M}
+function sideM(L){const M=[],add=(g,id,name,val,score)=>M.push({g,id,name,val,score});
+const nt=L[1],un=L[2],lp=L[0],fh=L[10],ch=L[175],bm=L[152],ll=L[17],right=d(nt,L[58])>d(nt,L[288]),gn=right?L[58]:L[288],er=right?L[234]:L[454],dir=nt.x>er.x?1:-1;
+const ang=(o,a,b)=>{const u=[a.x-o.x,a.y-o.y],v=[b.x-o.x,b.y-o.y];return Math.acos(Math.max(-1,Math.min(1,(u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)))))*180/Math.PI};
+let v=ang(un,nt,lp);add('Profile','nl','Nose to top lip angle',v.toFixed(0)+'°',sc(v,100,24));
+v=ang(un,fh,ch);add('Profile','profile','Profile line (forehead, nose, chin)',v.toFixed(0)+'°',sc(v,168,11));
+const lineX=nt.x+(ch.x-nt.x)*(ll.y-nt.y)/(ch.y-nt.y),e=(lineX-ll.x)*dir/d(nt,ch)*100;add('Profile','eline','Lower lip to E-line',e.toFixed(1)+'%',sc(e,2.4,4.5));
+v=ang(gn,er,bm);add('Jaw and chin','jawang','Jaw corner angle',v.toFixed(0)+'°',sc(v,122,16));
+v=(ch.x-lp.x)*dir/(bm.y-un.y);add('Jaw and chin','chinfwd','Chin forward vs lip',v.toFixed(2),sc(v,-.03,.16));
+v=Math.atan2(Math.abs(bm.y-gn.y),Math.abs(bm.x-gn.x))*180/Math.PI;add('Jaw and chin','jawslope','Jawline slope',v.toFixed(0)+'°',sc(v,20,12));return M}
+function dots(c,L){const x=c.getContext('2d'),r=Math.max(1.3,c.width/450);x.fillStyle='rgba(217,194,154,.75)';L.forEach(p=>{x.beginPath();x.arc(p.x,p.y,r,0,7);x.fill()})}
+// scan
+$('go').onclick=async()=>{$('go').disabled=true;$('res').innerHTML='';$('st').textContent='Loading the scanner. The first time needs internet and takes a moment...';
+try{const f=await load(),res={};for(const k of ['front','side']){if(!IM[k])continue;$('st').textContent='Scanning '+k+' photo...';const c=IM[k],clean=document.createElement('canvas');clean.width=c.width;clean.height=c.height;clean.getContext('2d').drawImage(c,0,0);
+const r=f.detect(c);if(!r.faceLandmarks.length){res[k]={err:1};continue}const L=r.faceLandmarks[0].map(p=>({x:p.x*c.width,y:p.y*c.height}));const M=k=='front'?frontM(L,clean.getContext('2d')):sideM(L);const pc=document.createElement('canvas');pc.width=c.width;pc.height=c.height;pc.getContext('2d').drawImage(clean,0,0);dots(pc,L);res[k]={M,pc}}
+$('st').textContent='';RES=res;show()}catch(e){$('st').innerHTML='<span class="err">Scanner could not load. Connect to the internet once, then try again. ('+e.message+')</span>'}$('go').disabled=false};
+const col=s=>s>=70?'var(--ok)':s>=50?'var(--md)':'var(--lo)';
+function metHtml(m){const i=INFO[m.id],p=psl(m.score),fx=i.s>=.5?'Mostly fixable naturally':i.s>=.2?'Partly fixable naturally':'Mostly bone: hard to change naturally';
+return `<details class="met"><summary><span class="mn">${m.name}</span><span class="mv">${m.val}</span><span class="ms" style="color:${col(m.score)}">${p}</span></summary><div class="sl"><i style="left:${Math.max(3,Math.min(97,m.score))}%"></i></div><div class="det"><h4>What it means</h4><p>${i.w}</p><h4>Soft maxxing (no surgery)</h4><p>${i.so}</p><h4>Hard maxxing (surgery or medical)</h4><p>${i.ha}</p><span class="fx">${fx}</span></div></details>`}
+function panel(k){const r=RES[k];if(!r)return '<p class="mu">No photo added for this view.</p>';if(r.err)return '<p class="err">No face found. Try a clearer, brighter photo.</p>';const gs={};r.M.forEach(m=>(gs[m.g]=gs[m.g]||[]).push(m));
+let h=`<div class="photo" id="ph_${k}"></div>`;for(const g in gs){const s=avg(gs[g]);h+=`<div class="card"><div style="display:flex;justify-content:space-between"><h2>${g}</h2><b style="color:${col(s)}">${psl(s)}</b></div>${gs[g].map(metHtml).join('')}</div>`}return h}
+function show(){const all=[];['front','side'].forEach(k=>RES[k]&&RES[k].M&&all.push(...RES[k].M));if(!all.length){$('res').innerHTML='<p class="err">No face found. Use a clear, bright photo.</p>';return}
+const ov=avg(all),o=psl(ov),fs=RES.front&&RES.front.M?psl(avg(RES.front.M)):null,ss=RES.side&&RES.side.M?psl(avg(RES.side.M)):null;
+const so=[...all].sort((a,b)=>b.score-a.score),H=LS.get('psl_hist',[]);H.push({t:Date.now(),f:fs,s:ss,o});LS.set('psl_hist',H.slice(-60));
+const C=2*Math.PI*44;
+$('res').innerHTML=`<div class="card"><div class="ov"><div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/><circle cx="50" cy="50" r="44" fill="none" stroke="#d9c29a" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C*o/8} ${C}"/></svg><span class="sf">${o}</span></div><div><div class="lbl">OVERALL</div><div class="tr sf">${tier(o)}</div></div><div class="sc"><div class="sf">${ss??'—'}</div><div class="lbl">SIDE</div></div></div></div>
+<div class="card"><div class="lbl">VERDICT</div><p class="sf" style="font-size:1.1rem">Strongest: ${so[0].name}. Holding you back: ${so[so.length-1].name}. See the Plan tab for what to do.</p></div>
+<div class="tabs"><button data-t="front" class="on">Front ${fs??''}</button><button data-t="side">Side ${ss??''}</button></div>
+<div id="pf">${panel('front')}</div><div id="pS" hidden>${panel('side')}</div>
+<div class="card"><h2>Tier key</h2><table><tr><td><b>Sub 3</b></td><td>Very bad</td></tr><tr><td><b>Sub 5</b></td><td>Below average</td></tr><tr><td><b>LTN</b></td><td>Average</td></tr><tr><td><b>MTN</b></td><td>Slightly above average</td></tr><tr><td><b>HTN</b></td><td>Good looking</td></tr><tr><td><b>HTN+</b></td><td>Elite</td></tr><tr><td><b>Adam</b></td><td>Top 1%</td></tr><tr><td><b>True Adam</b></td><td>Top 0.001%</td></tr></table></div>
+<p class="mu">Strict estimate from shape and skin pixels. It is not the official PSL app. It cannot see hair, eye colour, body or expression.</p>`;
+['front','side'].forEach(k=>{if(RES[k]&&RES[k].pc){const c=document.createElement('canvas');c.width=RES[k].pc.width;c.height=RES[k].pc.height;c.getContext('2d').drawImage(RES[k].pc,0,0);$('ph_'+k).appendChild(c)}});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));$('pf').hidden=b.dataset.t!='front';$('pS').hidden=b.dataset.t!='side'});$('res').scrollIntoView({behavior:'smooth'})}
+// progress and ranks
+const RANKS=[['Newbie',0],['Rookie',1],['Grinder',3],['Elite',7],['Legend',12]];
+const TASKS=['Skincare and SPF done','Slept 7 to 9 hours','Trained or walked 30+ minutes','Ate clean (no junk binge)','Posture and neck work'];
+const dk=t=>new Date(t).toLocaleDateString('en-CA');
+const wk=t=>{const x=new Date(t);x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7);return x.getTime()};
+const pw=w=>{const x=new Date(w);x.setDate(x.getDate()-7);return x.getTime()};
+function streak(){const ch=LS.get('psl_checks',{}),wc={};for(const k in ch)if(ch[k].length>=3){const w=wk(k+'T00:00:00');wc[w]=(wc[w]||0)+1}let w=wk(Date.now()),n=0;if((wc[w]||0)<4)w=pw(w);while((wc[w]||0)>=4){n++;w=pw(w)}return n}
+function renderProg(){const st=streak(),ri=RANKS.reduce((a,r,i)=>st>=r[1]?i:a,0),nx=RANKS[ri+1],ch=LS.get('psl_checks',{}),today=ch[dk(Date.now())]||[],H=LS.get('psl_hist',[]);
+const pts=H.slice(-12);let svg='';if(pts.length>1){const W=300,Hh=90,xs=i=>10+i*(W-20)/(pts.length-1),ys=v=>Hh-8-(v/8)*(Hh-16);svg=`<svg viewBox="0 0 ${W} ${Hh}" style="width:100%"><polyline fill="none" stroke="#d9c29a" stroke-width="2.5" points="${pts.map((p,i)=>xs(i)+','+ys(p.o)).join(' ')}"/>${pts.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.o)}" r="3.5" fill="#f3f0ea"/>`).join('')}</svg>`}
+let proj='';const last=RES&&[...(RES.front&&RES.front.M||[]),...(RES.side&&RES.side.M||[])];if(last&&last.length){const g=last.map(m=>({score:Math.min(100,m.score+(100-m.score)*INFO[m.id].s*.6)}));const pr=psl(avg(g)),cu=psl(avg(last));proj=`<div class="card"><h2>Projected rating</h2><p>Now: <b>${cu} (${tier(cu)})</b></p><p>If you stay consistent on everything that can change without surgery: <b>about ${pr} (${tier(pr)})</b></p><p class="mu">This is a projection of numbers, not a picture. I do not make a "future face" image because an edited face would be a guess and would mislead you. Bone shape stays the same in this projection.</p></div>`}
+$('v-prog').innerHTML=`<div class="card"><div class="lbl">RANK</div><div class="tr sf">${RANKS[ri][0]}</div><div class="rk">${RANKS.map((r,i)=>`<span class="${i==ri?'on':''}">${r[0]}</span>`).join('')}</div><p class="mu">${st} week${st==1?'':'s'} in a row. A week counts when you log 4 or more good days. A good day is 3 or more tasks done.${nx?` Next rank, ${nx[0]}, at ${nx[1]} weeks.`:' You are at the top rank.'}</p>${nx?`<div class="bar"><i style="width:${Math.min(100,st/nx[1]*100)}%"></i></div>`:''}</div>
+<div class="card"><h2>Today's check-in</h2>${TASKS.map((t,i)=>`<label class="chk"><input type="checkbox" data-i="${i}" ${today.includes(i)?'checked':''}>${t}</label>`).join('')}</div>
+<div class="card"><h2>Rating history</h2>${svg||'<p class="mu">Scan on different days to see your line here. Only the scores are saved, never photos.</p>'}${H.slice(-8).reverse().map(p=>`<table><tr><td>${new Date(p.t).toLocaleDateString('en-GB')}</td><td>Front ${p.f??'—'}</td><td>Side ${p.s??'—'}</td><td style="text-align:right"><b>${p.o}</b> ${tier(p.o)}</td></tr></table>`).join('')}</div>${proj}
+<button class="gh" id="clr" style="width:100%">Delete all my saved progress</button>`;
+document.querySelectorAll('#v-prog .chk input').forEach(c=>c.onchange=()=>{const a=LS.get('psl_checks',{}),k=dk(Date.now());let l=a[k]||[];l=c.checked?[...new Set([...l,+c.dataset.i])]:l.filter(x=>x!=+c.dataset.i);a[k]=l;LS.set('psl_checks',a);renderProg()});
+$('clr').onclick=()=>{if(confirm('Delete all saved scores and check-ins from this phone?')){LS.set('psl_hist',[]);LS.set('psl_checks',{});renderProg()}}}
+$('v-plan').innerHTML=`<div class="card"><h2>Soft maxxing (no surgery)</h2><p class="mu">Ordered by how much visible change they give.</p><ul><li><b>Lower body fat.</b> The biggest single change. Fat hides the jaw, cheeks and eye area. Lose it slowly with a calorie deficit and lifting. Crash diets make you look worse and can harm you.</li><li><b>Skin.</b> SPF 30+ daily, gentle cleanser, moisturizer, retinoid at night. Dermatologist for acne and scars.</li><li><b>Hair.</b> A cut that fits your face shape. Hair loss is easier to stop than to regrow: see a doctor about minoxidil or finasteride early.</li><li><b>Brows and beard.</b> Clean brow shape. Beard shaped to square the jaw or balance the chin, or a clean shave if it suits you.</li><li><b>Teeth.</b> Whitening, and braces or aligners if your bite or lip support is off.</li><li><b>Neck, traps, posture.</b> A thicker neck widens the look of the jaw. Fix head-forward posture.</li><li><b>Sleep, no smoking, less alcohol and salt.</b> Cuts puffiness and dark circles.</li><li><b>Glasses, clothes fit, grooming.</b> Cheap and visible.</li></ul></div>
+<div class="card"><h2>Hard maxxing (surgery or medical)</h2><ul><li>Rhinoplasty (nose shape, tip, width)</li><li>Genioplasty or chin implant (weak or short chin)</li><li>Jaw implants or jaw angle implants</li><li>Orthognathic surgery: Le Fort or bimax (jaw and midface position)</li><li>Canthopexy or canthoplasty (eye tilt)</li><li>Fillers: chin, jaw, cheeks, under-eye (temporary)</li><li>Hair transplant, laser, peels, microneedling</li></ul><p class="mu">Only with a licensed surgeon. Ask to see real before and after photos and ask what can go wrong.</p></div>
+<div class="card"><h2>Cannot be fixed naturally</h2><ul><li>Bone structure: eye spacing, midface length, cheekbone width, jaw angle, chin and nose size</li><li>Canthal tilt (mostly)</li><li>Height and body proportions</li><li>Your age and genetics</li></ul></div>
+<div class="card bad"><h2>Myths, straight talk</h2><ul><li><b>Bone smashing:</b> there is no evidence it changes adult bone. It can cause fractures, nerve damage, swelling and scarring. It is not in this app on purpose. Pain is not proof of progress.</li><li><b>Thumb pulling and jaw trainers:</b> no proof. They can stress teeth and joints.</li><li><b>Mewing (tongue posture):</b> no proven bone change in adults. Good posture is free, so keep that part.</li><li><b>Facial exercises:</b> no proof they change bone or the rating.</li></ul></div>
+<p class="mu">If rating your face makes you feel worse, take a break. If body image or eating feels out of control, talk to a doctor or counsellor.</p>`;
+$('v-priv').innerHTML=`<div class="card"><h2>Where do my photos go?</h2><p>Nowhere. Your photo is opened and scanned inside this app on your phone. It is never uploaded to the developer, to GitHub, or to any server. It is not saved. When you close the app it is gone.</p></div>
+<div class="card"><h2>What is saved?</h2><p>Only your scores, dates and daily check-ins, stored on this phone. Nobody else can see them. You can delete them in the Progress tab, or by clearing the app's data.</p></div>
+<div class="card"><h2>Who can use my data?</h2><p>Only you. There is no account and no login.</p></div>
+<div class="card"><h2>Offline</h2><p>The first time you open the app, keep the internet on for a minute. The app saves its face scanner on your phone. After that, it works with no internet.</p></div>
+<div class="card"><h2>Install</h2><p>Android: tap the Install button at the top, or the browser menu, then Install app. iPhone: Share, then Add to Home Screen.</p></div>`;
 </script></body></html>
